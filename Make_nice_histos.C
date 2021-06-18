@@ -9,6 +9,9 @@ using namespace std;
 
 void Make_nice_histos() {
 
+  gStyle->SetStatW(0.3);
+  gStyle->SetStatH(0.2);
+
   //import histograms
   TString histFileName = "GlauberModelData1000000.root";
   cout << histFileName << endl;
@@ -26,8 +29,8 @@ void Make_nice_histos() {
   cntuple->cd(1);
   histob->SetTitle("");
   histob->SetXTitle("b");
-  histob->GetXaxis()->SetTitleSize(0.04);
-  histob->GetYaxis()->SetLabelSize(0.04);
+  histob->GetXaxis()->SetTitleSize(0.045);
+  histob->GetYaxis()->SetLabelSize(0.03);
   histob->GetXaxis()->SetLabelSize(0.04);
   //histob->GetXaxis()->SetRangeUser(min,max);
   ntupleResults->Draw("b>>histob");
@@ -35,7 +38,7 @@ void Make_nice_histos() {
   cntuple->cd(2);
   histonumpart->SetTitle("");
   histonumpart->SetXTitle("N_{part}");
-  histonumpart->GetXaxis()->SetTitleSize(0.04);
+  histonumpart->GetXaxis()->SetTitleSize(0.045);
   histonumpart->GetYaxis()->SetLabelSize(0.04);
   histonumpart->GetXaxis()->SetLabelSize(0.04);
   //histonumpart->GetXaxis()->SetRangeUser(min,max);
@@ -45,7 +48,7 @@ void Make_nice_histos() {
   cntuple->cd(3);
   histonumcol->SetTitle("");
   histonumcol->SetXTitle("N_{coll}");
-  histonumcol->GetXaxis()->SetTitleSize(0.04);
+  histonumcol->GetXaxis()->SetTitleSize(0.045);
   histonumcol->GetYaxis()->SetLabelSize(0.04);
   histonumcol->GetXaxis()->SetLabelSize(0.04);
   //histonumcol->GetXaxis()->SetRangeUser(min,max);
@@ -53,5 +56,6 @@ void Make_nice_histos() {
   ntupleResults->Draw("numcol>>histonumcol");
 
   cntuple->SaveAs("bNumpartNumcol.png");
+  cntuple->SaveAs("bNumpartNumcol.pdf");
 
 }

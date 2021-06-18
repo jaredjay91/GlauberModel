@@ -71,12 +71,17 @@ void getClasses() {
   hNtracks_CMSdata->GetYaxis()->CenterTitle();
   hNtracks_CMSdata->GetXaxis()->SetTitle("#Sigma E_{T} in HF [TeV]");
   hNtracks_CMSdata->GetXaxis()->CenterTitle();
+  hNtracks_CMSdata->GetYaxis()->SetTitleSize(0.05);
+  hNtracks_CMSdata->GetYaxis()->SetLabelSize(0.05);
+  hNtracks_CMSdata->GetXaxis()->SetTitleSize(0.05);
+  hNtracks_CMSdata->GetXaxis()->SetTitleOffset(1.5);
+  hNtracks_CMSdata->GetXaxis()->SetLabelSize(0.05);
   //hNtracks_CMSdata->SetMaximum(1e7);
   //hNtracks_CMSdata->SetMinimum(0.3);
   //hNtracks_CMSdata->SetMaximum(2e6);
   //hNtracks_CMSdata->SetMinimum(1e5);
   c1->SetBottomMargin(0.15);
-  c1->SetLeftMargin(0.2);
+  c1->SetLeftMargin(0.15);
 
   cout << "total integral = " << hNtracks_CMSdata->Integral() << endl;
 
@@ -197,7 +202,7 @@ void getClasses() {
   for (int i = 0; i<xarraysize; i++) {
     const double xpos = xtrue[i];
     cout << "xtrue[" << i << "] = " << xpos << endl;
-    TLine *l = new TLine(xpos,ymin,xpos,ymax);
+    TLine *l = new TLine(xpos,ymin,xpos,ymax*0.8);
     l->SetLineColor(2);
     l->SetLineStyle(2);
     l->Draw();
@@ -209,7 +214,7 @@ void getClasses() {
     xprev = xpos;
   }
 
-  TLegend* fitleg = new TLegend(0.7,0.7,0.9,0.8); fitleg->SetTextSize(12);
+  TLegend* fitleg = new TLegend(0.7,0.7,0.89,0.8); fitleg->SetTextSize(16);
   fitleg->SetTextFont(43);
   fitleg->SetBorderSize(0);
   fitleg->AddEntry(hNtracks_CMSdata,"Data","pel");
