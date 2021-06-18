@@ -88,7 +88,7 @@ void GlauberModelPbPb(){
   }
 
   //Save data
-  TFile outfile ("GlauberModelData1000000.root", "RECREATE");
+  TFile outfile (Form("GlauberModelData%i.root",NEvents), "RECREATE");
   ntuple->Write();
   outfile.Close();
 
