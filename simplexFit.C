@@ -27,7 +27,7 @@ void simplexFit() {
 
   cout << "Loading Glauber Model Data." << endl;
 
-  TFile *GMdata = new TFile("GlauberModelData1000000.root");
+  TFile *GMdata = new TFile("GlauberModelDataPbPb502TeV1000000.root");
   TNtuple* GMntuple = (TNtuple*)GMdata->Get("ntuple;1");
   TLeaf *bLeaf = GMntuple->GetLeaf("b");
   TLeaf *numpartLeaf = GMntuple->GetLeaf("numpart");
@@ -50,8 +50,10 @@ void simplexFit() {
 
   //Import CMS data.
   const char *inputFile = "10-001_Sum_ET_HF_Energy.root";
+  //const char *inputFile = "HF2_PbPb_502TeV_MinBias_fromCrab_2020_11_03.root";
   TFile *thefile = new TFile(inputFile);
   TH1D* hNtracks_CMSdata = (TH1D*)thefile->Get("hSumEnergy_nominal");
+  //TH1D* hNtracks_CMSdata = (TH1D*)thefile->Get("HF2Hist");
   double Ndata = hNtracks_CMSdata->GetEntries();
   int minBinFit = 5;
   int nHFbins = hNtracks_CMSdata->GetNbinsX();
@@ -81,11 +83,15 @@ void simplexFit() {
   cout << "Applying particle production model." << endl;
 
   //Define negative binomial distribution (NBD) with initial parameters
-  double mu = 1.43083;
-  double k = 0.753833;
-  double normval = 1.23;//35 works well with 1000000 events.
-  //double xscale = 1.2592;
+  //double mu = 1.43083;
+  //double k = 0.753833;
+  //double normval = 1.23;
+  double mu = 1.41538;
+  double k = 0.601934;
+  double normval = 1.1975;
+  double startingWidth = 0.2;
   double xscale = 1.0/1000;
+  //double xscale = 1.0;
   //double xshift = 0;
   TF1 *NBD = new TF1("NBD","TMath::Gamma(x+[1])/(TMath::Gamma(x+1)*TMath::Gamma([1])) * (([0]/[1])**x)/(([0]/[1]+1)**(x+[1]))",0,28);
   NBD->SetParameters(mu,k);
@@ -107,10 +113,10 @@ void simplexFit() {
   double Expected, Observed;
   double kGuess = k;
   double muGuess = mu;
-  double kParam[3] = {kGuess*0.6, kGuess, kGuess*1.4}; //3 initial points
-  double muParam[3] = {muGuess*0.6, muGuess*1.4, muGuess};
+  double kParam[3] = {kGuess*startingWidth, kGuess, kGuess*(1+startingWidth)}; //3 initial points
+  double muParam[3] = {muGuess*startingWidth, muGuess*(1+startingWidth), muGuess};
   double normParam[3] = {normval, normval, normval};
-  double chi2min = NEvents;
+  double chi2min = DBL_MAX;
   double chi2Val[3] = {chi2min, chi2min, chi2min};
   int smallOne, bigOne, otherOne;
   double dev = (kParam[2]-kParam[0])*(kParam[2]-kParam[0]) + (muParam[2]-muParam[0])*(muParam[2]-muParam[0]);
@@ -127,7 +133,7 @@ void simplexFit() {
   double minOf3 = 0;
 
   int normN = 40;
-  double normmin = 1.0;
+  double normmin = 0.8;
   double normmax = 1.4;
   double normeps = (normmax-normmin)/normN;
   if (normN==1) {
@@ -160,7 +166,7 @@ void simplexFit() {
 
     double chi2 = 0;
     double norm = normmin-normeps/2;
-    double chi2minNorm = (double)NEvents;
+    double chi2minNorm = DBL_MAX;
 
     for (int inorm = 0; inorm < normN; inorm++) {
       norm += normeps;
@@ -333,8 +339,8 @@ void simplexFit() {
   cout << "time elapsed: " << cpu_time_used << " seconds." << endl;
   cout << "The program finished." << endl;
 
-  c1->SaveAs("simplexFit_GlauberHFPbPb_MinBiasDataSumETHF.pdf");
-  c2->SaveAs("simplexFitPath.pdf");
-  c3->SaveAs("simplexFitProcess.pdf");
+  c1->SaveAs("2018simplexFit_GlauberHFPbPb_MinBiasDataSumETHF.pdf");
+  c2->SaveAs("2018simplexFitPath.pdf");
+  c3->SaveAs("2018simplexFitProcess.pdf");
 }
 

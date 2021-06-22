@@ -27,7 +27,7 @@ void getClasses() {
 
   cout << "Loading Glauber Model Data." << endl;
 
-  TFile *GMdata = new TFile("GlauberModelData1000000.root");
+  TFile *GMdata = new TFile("GlauberModelDataPbPb502TeV1000000.root");
   TNtuple* ntuple = (TNtuple*)GMdata->Get("ntuple;1");
   TLeaf *bLeaf = ntuple->GetLeaf("b");
   TLeaf *numpartLeaf = ntuple->GetLeaf("numpart");
@@ -53,7 +53,7 @@ void getClasses() {
   double Ndata = hNtracks_CMSdata->GetEntries();
   int minBinFit = 5;
   int nHFbins = hNtracks_CMSdata->GetNbinsX();
-  cout << "Number of bins = " << nHFbins << endl;
+  cout << "numClasses of bins = " << nHFbins << endl;
 
   //set poisson error bars in each bin
   hNtracks_CMSdata->Scale(Ndata);
@@ -88,9 +88,12 @@ void getClasses() {
   cout << "Applying particle production model." << endl;
 
   //Define negative binomial distribution (NBD) with initial parameters
-  double mu = 1.44058;
-  double k = 0.782729;
-  double normval = 1.195;
+  //double mu = 1.44058;
+  //double k = 0.782729;
+  //double normval = 1.195;
+  double mu = 1.32399;
+  double k = 0.461721;
+  double normval = 1.1975;
   //double xscale = 1.2592;
   double xscale = 1.0/1000;
   //double xshift = 0;
@@ -111,7 +114,7 @@ void getClasses() {
   delete hSumEnergy_100bins;
   hSumEnergy_100bins = (TH1D*)hNtracks_CMSdata->Clone("HSumEnergy100bins");
   hSumEnergy_100bins->SetLineColor(2);
-  TH1D* hSumEnergy_nominal = new TH1D ("HSumEnergy","Energy distribution GM",330,0,histomax);
+  TH1D* hSumEnergy_nominal = new TH1D ("HSumEnergy","Energy distribution GM",1000,0,histomax);
   //hSumEnergy_nominal->SetLineColor(2);
   for (int ipp = 0; ipp<NEvents; ipp++) {
     //For each nucleon collison (Ncol), sample from the NBD to estimate SumEnergy
@@ -158,7 +161,8 @@ void getClasses() {
   hSumEnergy_nominal->Scale(1.0/totalintegral);
   hSumEnergy_nominal->SetMaximum(0.03);
   hSumEnergy_nominal->SetMinimum(1e-6);
-  const int xarraysize = (int)(100/percentsize - 1);
+  const int numClasses = (int)(100/percentsize);
+  const int xarraysize = numClasses - 1;
   double xtrue[xarraysize];
   memset( xtrue, 0, xarraysize*sizeof(double) );
   while (xtrue[xarraysize-1]==0) {
@@ -173,6 +177,8 @@ void getClasses() {
       integral = hSumEnergy_nominal->Integral(bmin,bmax);
     }
     //estimate true x-value
+    cout << "integral = " << integral << " >= " << inttrue << " at xmin=" << xmin << endl;
+    cout << "previous = " << previous << " < " << inttrue << " at xmin=" << xmin+eps << endl;
     double y0 = hSumEnergy_nominal->GetBinContent(bmin);
     int b1 = axis->FindBin(xmin+eps);
     double y1 = hSumEnergy_nominal->GetBinContent(b1);
@@ -182,6 +188,7 @@ void getClasses() {
     double B = -2*(Area1+Area0) - (y0-y1)*(2*xmin+eps);
     double C = 2*xmin*Area1 + 2*(xmin+eps)*Area0 + (y0-y1)*xmin*(xmin+eps);
     xtrue[n-1] = (-B-TMath::Sqrt(B*B-4*A*C))/(2*A);
+    cout << "it should be exactly " << inttrue << " at xtrue=" << xtrue[n-1] << endl;
     n++;
   }
   cout << "Finished while loop" << endl;
@@ -229,59 +236,118 @@ void getClasses() {
   cout << "Saved histograms" << endl;
 
   //Determine average values of Npart, Ncol, and b for each centrality class
-  const int number = xarraysize+1;
-  double Npartavg[number];
-  double Ncolavg[number];
-  double bavg[number];
-  memset( Npartavg, 0, number*sizeof(double) );
-  memset( Ncolavg, 0, number*sizeof(double) );
-  memset( bavg, 0, number*sizeof(double) );
+  TH1D* hNpartTot = new TH1D("hNpartTot","Number of participants",100,0,500);
+  TH1D* hNcolTot = new TH1D("hNcolTot","Number of Collisions",100,0,2500);
+  TH1D* hbTot = new TH1D("hbTot","Impact Parameter",100,0,20);
+  TH1D* hNpart[numClasses];
+  TH1D* hNcol[numClasses];
+  TH1D* hb[numClasses];
+  for (int iClass = 0; iClass<numClasses; iClass++) {
+    hNpart[iClass] = new TH1D(Form("hNpart[%i]",iClass),"hNpart",100,0,500);
+    hNcol[iClass] = new TH1D(Form("hNcol[%i]",iClass),"hNcol",100,0,2500);
+    hb[iClass] = new TH1D(Form("hb[%i]",iClass),"hb",100,0,20);
+  }
+  double Npartavg[numClasses];
+  double Ncolavg[numClasses];
+  double bavg[numClasses];
+  memset( Npartavg, 0, numClasses*sizeof(double) );
+  memset( Ncolavg, 0, numClasses*sizeof(double) );
+  memset( bavg, 0, numClasses*sizeof(double) );
   double b;
   int numpart;
-  int eventcounter = 0;
-  int classsize[number];
-  memset( classsize, 0, number*sizeof(double) );
-  for (int eventcounter = 0; eventcounter < NEvents; eventcounter++) {
-    int classcounter = -1;
-    double test = SumEnergy[eventcounter];
+  int iEvt = 0;
+  int classSize[numClasses];
+  memset( classSize, 0, numClasses*sizeof(double) );
+  for (int iEvt = 0; iEvt < NEvents; iEvt++) {
+    int iClass = -1;
+    double test = SumEnergy[iEvt];
     if (test > xtrue[0]) {
-      classcounter = 0;
+      iClass = 0;
     }
     for (int j = 1; j<xarraysize; j++) {
       if (xtrue[j-1] > test && test > xtrue[j]) {
-        classcounter = j;
+        iClass = j;
       }
     }
-    if (classcounter < 0) {
-      classcounter = xarraysize;
+    if (iClass < 0) {
+      iClass = xarraysize;
     }
-    ntuple->GetEntry(eventcounter);
+    ntuple->GetEntry(iEvt);
     b = (double)bLeaf->GetValue();
     numpart = (int)numpartLeaf->GetValue();
     numcol = (int)numcolLeaf->GetValue();
-    Npartavg[classcounter] += numpart;
-    Ncolavg[classcounter] += numcol;
-    bavg[classcounter] += b;
-    classsize[classcounter]++;
+    hNpart[iClass]->Fill(numpart);
+    hNcol[iClass]->Fill(numcol);
+    hb[iClass]->Fill(b);
+    hNpartTot->Fill(numpart);
+    hNcolTot->Fill(numcol);
+    hbTot->Fill(b);
+    Npartavg[iClass] += numpart;
+    Ncolavg[iClass] += numcol;
+    bavg[iClass] += b;
+    classSize[iClass]++;
   }
 
   //Diplay average values of Npart, Ncol, and b for each centrality class
-  for (int classcounter2 = 0; classcounter2<xarraysize+1; classcounter2++) {
-    Npartavg[classcounter2] = (double)Npartavg[classcounter2]/classsize[classcounter2];
-    Ncolavg[classcounter2] = (double)Ncolavg[classcounter2]/classsize[classcounter2];
-    bavg[classcounter2] = bavg[classcounter2]/classsize[classcounter2];
-    cout << "Npartavg[" << classcounter2 << "] = " << Npartavg[classcounter2] << "; ";
-    cout << "Ncolavg[" << classcounter2 << "] = " << Ncolavg[classcounter2] << "; ";
-    cout << "bavg[" << classcounter2 << "] = " << bavg[classcounter2] << "; ";
-    cout << "n = " << classsize[classcounter2] << endl;
+  for (int iClass = 0; iClass<numClasses; iClass++) {
+    Npartavg[iClass] = (double)Npartavg[iClass]/classSize[iClass];
+    Ncolavg[iClass] = (double)Ncolavg[iClass]/classSize[iClass];
+    bavg[iClass] = bavg[iClass]/classSize[iClass];
+    cout << "Npartavg[" << iClass << "] = " << Npartavg[iClass] << "; ";
+    cout << "Ncolavg[" << iClass << "] = " << Ncolavg[iClass] << "; ";
+    cout << "bavg[" << iClass << "] = " << bavg[iClass] << "; ";
+    cout << "n = " << classSize[iClass] << endl;
   }
 
   //LaTeX format
   cout << endl << "Centrality & $\\langle N_{part}\\rangle$ & $\\langle N_{col}\\rangle$ & b \\\\" << endl;
-  for (int classcounter2 = 0; classcounter2<xarraysize+1; classcounter2++) {
-    cout << Form("%d - %d",classcounter2*percentsize,(classcounter2+1)*percentsize) << "\\% & " << Npartavg[classcounter2] << " & " << Ncolavg[classcounter2] << " & " << bavg[classcounter2] << " \\\\" << endl;
+  for (int iClass = 0; iClass<numClasses; iClass++) {
+    cout << Form("%d - %d",iClass*percentsize,(iClass+1)*percentsize) << "\\% & " << Npartavg[iClass] << " & " << Ncolavg[iClass] << " & " << bavg[iClass] << " \\\\" << endl;
   }
   //Compare to https://twiki.cern.ch/twiki/bin/viewauth/CMS/Glauber5TeVPbPbNewParameters#Npart
+
+  //make a fancy looking plot.
+  TCanvas* c2 =  new TCanvas("c2","c2",0,0,1200,400);
+  c2->Divide(3,1);
+  c2->cd(1);
+  gPad->SetLogy();
+  hNpartTot->GetXaxis()->SetTitle("N_{part}");
+  hNpartTot->GetXaxis()->SetTitleSize(0.04);
+  hNpartTot->Draw();
+  c2->cd(2);
+  gPad->SetLogy();
+  hNcolTot->GetXaxis()->SetTitle("N_{col}");
+  hNcolTot->GetXaxis()->SetTitleSize(0.04);
+  hNcolTot->Draw();
+  c2->cd(3);
+  hbTot->GetXaxis()->SetTitle("b");
+  hbTot->GetXaxis()->SetTitleSize(0.04);
+  hbTot->Draw();
+  TLegend* leg = new TLegend(0.53, 0.65, 0.7, 0.89);
+  leg->SetBorderSize(0);
+  TLegend* leg2 = new TLegend(0.7, 0.65, 0.89, 0.89);
+  leg2->SetBorderSize(0);
+  for (int iClass = 0; iClass<numClasses; iClass++) {
+    int iColor = iClass+2;
+    if (iColor > 9) iColor = iColor+18;
+    c2->cd(1);
+    hNpart[iClass]->SetLineColor(iColor);
+    hNpart[iClass]->Draw("same");
+    c2->cd(2);
+    hNcol[iClass]->SetLineColor(iColor);
+    hNcol[iClass]->Draw("same");
+    if (iClass>4) leg2->AddEntry(hNcol[iClass],Form("%i-%i%%",iClass*10,(iClass+1)*10),"l");
+    else leg->AddEntry(hNcol[iClass],Form("%i-%i%%",iClass*10,(iClass+1)*10),"l");
+    c2->cd(3);
+    hb[iClass]->SetLineColor(iColor);
+    hb[iClass]->Draw("same");
+  }
+
+  c2->cd(2);
+  leg->Draw("same");
+  leg2->Draw("same");
+  c2->SaveAs("NpartNcolb_centralityClasses.png");
+  c2->SaveAs("NpartNcolb_centralityClasses.pdf");
 
   //Display time elapsed
   end = clock();
