@@ -86,8 +86,8 @@ void simplexFit() {
   //double mu = 1.43083;
   //double k = 0.753833;
   //double normval = 1.23;
-  double mu = 1.41538;
-  double k = 0.601934;
+  double mu = 1.5;
+  double k = 1.0;
   double normval = 1.1975;
   double startingWidth = 0.2;
   double xscale = 1.0/1000;
@@ -123,10 +123,11 @@ void simplexFit() {
 
   //Use converging triangle method to find minimum negative log likelihood
   TFile* outFile = new TFile("fittedVals.root","recreate");
-  TNtuple* ntuple = new TNtuple("ntuple","list of fitted values","k:mu:norm",1);
-  TNtuple* ntuple1 = new TNtuple("ntuple1","list of fitted values","k:mu:norm",1);
-  TNtuple* ntuple2 = new TNtuple("ntuple2","list of fitted values","k:mu:norm",1);
-  TNtuple* ntuple3 = new TNtuple("ntuple3","list of fitted values","k:mu:norm",1);
+  TNtuple* ntuple = new TNtuple("ntuple","list of fitted values","k:mu:norm:chi2",1);
+  TNtuple* ntuple1 = new TNtuple("ntuple1","list of fitted values","k:mu:norm:chi2",1);
+  TNtuple* ntuple2 = new TNtuple("ntuple2","list of fitted values","k:mu:norm:chi2",1);
+  TNtuple* ntuple3 = new TNtuple("ntuple3","list of fitted values","k:mu:norm:chi2",1);
+  TNtuple* ntupleworst = new TNtuple("ntupleworst","list of fitted values","k:mu:norm:chi2",1);
 
   double pinch = 0.9;
   double maxOf3 = 0;
@@ -142,6 +143,7 @@ void simplexFit() {
   }
 
   while (dev>0.00001) {
+  //while (dev>0.0001) {
     int changeOne = bigOne;
     smallOne = 0;
     otherOne = 0;
@@ -233,10 +235,11 @@ void simplexFit() {
     //cout << "s = " << kParam[smallOne] << endl;
     //cout << "b = " << muParam[smallOne] << endl;
     //cout << "chi2min = " << chi2min << endl;
-    ntuple->Fill(kParam[smallOne],muParam[smallOne]);
-    ntuple1->Fill(kParam[0],muParam[0],normParam[0]);
-    ntuple2->Fill(kParam[1],muParam[1],normParam[1]);
-    ntuple3->Fill(kParam[2],muParam[2],normParam[2]);
+    ntuple->Fill(kParam[smallOne],muParam[smallOne],normParam[smallOne],minOf3);
+    ntuple1->Fill(kParam[0],muParam[0],normParam[0],chi2Val[0]);
+    ntuple2->Fill(kParam[1],muParam[1],normParam[1],chi2Val[1]);
+    ntuple3->Fill(kParam[2],muParam[2],normParam[2],chi2Val[2]);
+    ntupleworst->Fill(kParam[bigOne],muParam[bigOne],normParam[bigOne],maxOf3);
   }//end of while loop
 
   double kFitted = kParam[smallOne];
@@ -253,19 +256,25 @@ void simplexFit() {
   float svals1[constNsteps], bvals1[constNsteps];
   float svals2[constNsteps], bvals2[constNsteps];
   float svals3[constNsteps], bvals3[constNsteps];
+  float chi2bestvals[constNsteps];
+  float chi2worstvals[constNsteps];
+  float stepvals[constNsteps];
   cout << Nsteps << endl;
   TLeaf *kLeaf = ntuple->GetLeaf("k");
   TLeaf *muLeaf = ntuple->GetLeaf("mu");
+  TLeaf *chi2bestLeaf = ntuple->GetLeaf("chi2");
   TLeaf *kLeaf1 = ntuple1->GetLeaf("k");
   TLeaf *muLeaf1 = ntuple1->GetLeaf("mu");
   TLeaf *kLeaf2 = ntuple2->GetLeaf("k");
   TLeaf *muLeaf2 = ntuple2->GetLeaf("mu");
   TLeaf *kLeaf3 = ntuple3->GetLeaf("k");
   TLeaf *muLeaf3 = ntuple3->GetLeaf("mu");
+  TLeaf *chi2worstLeaf = ntupleworst->GetLeaf("chi2");
   for (int istep=0; istep<Nsteps; istep++) {
     ntuple->GetEntry(istep);
     svals[istep] = (float)kLeaf->GetValue();
     bvals[istep] = (float)muLeaf->GetValue();
+    chi2bestvals[istep] = (float)chi2bestLeaf->GetValue();
     ntuple1->GetEntry(istep);
     svals1[istep] = (float)kLeaf1->GetValue();
     bvals1[istep] = (float)muLeaf1->GetValue();
@@ -275,31 +284,82 @@ void simplexFit() {
     ntuple3->GetEntry(istep);
     svals3[istep] = (float)kLeaf3->GetValue();
     bvals3[istep] = (float)muLeaf3->GetValue();
+    ntupleworst->GetEntry(istep);
+    chi2worstvals[istep] = (float)chi2worstLeaf->GetValue();
+    if (isinf(chi2worstvals[istep])) {
+      chi2worstvals[istep] = 1e5;
+    }
+    cout << "chi2worstvals[" << istep << "] = " << chi2worstvals[istep] << endl;
+    stepvals[istep] = (float)istep;
+    cout << "stepvals[" << istep << "] = " << stepvals[istep] << endl;
   }
 
-  TCanvas * c2 = new TCanvas("c2","c2",4,520,500,400);
+  TCanvas * c2 = new TCanvas("c2","c2",0,0,400,400);
   c2->cd();
   TGraph *gmin = new TGraph(Nsteps,bvals,svals);
   c2->SetLeftMargin(0.12);
-  gmin->SetTitle("Path to minimum NLL");
+  gmin->SetTitle("Path to minimum #chi^2");
+  gmin->GetXaxis()->SetTitleSize(0.04);
+  gmin->GetXaxis()->SetLabelSize(0.04);
+  gmin->GetYaxis()->SetTitleSize(0.04);
+  gmin->GetYaxis()->SetLabelSize(0.04);
   gmin->GetXaxis()->SetTitle("Parameter #mu");
-  gmin->GetXaxis()->SetTitleOffset(1.2);
+  //gmin->GetXaxis()->SetTitleOffset(1.2);
   gmin->GetYaxis()->SetTitle("Parameter k");
-  gmin->GetYaxis()->SetTitleOffset(1.8);
+  gmin->GetYaxis()->SetTitleOffset(1.5);
+  //gmin->GetXaxis()->SetLimits(0.0,2*muFitted);
+  //gmin->GetHistogram()->SetMinimum(0.0);
+  //gmin->GetHistogram()->SetMaximum(2*kFitted);
   gmin->Draw("AC*");
 
-  TCanvas * c3 = new TCanvas("c3","c3",504,520,500,400);
+  TCanvas * c3 = new TCanvas("c3","c3",0,400,400,400);
   c3->cd();
+  c3->SetLeftMargin(0.12);
   TGraph *g1 = new TGraph(Nsteps,bvals1,svals1);
   g1->SetLineColor(kRed);
   TGraph *g2 = new TGraph(Nsteps,bvals2,svals2);
   g2->SetLineColor(kBlue);
   TGraph *g3 = new TGraph(Nsteps,bvals3,svals3);
   g3->SetLineColor(kGreen);
+  g1->SetTitle("Convergence of the 3 points");
+  g1->GetXaxis()->SetTitleSize(0.04);
+  g1->GetXaxis()->SetLabelSize(0.04);
+  g1->GetYaxis()->SetTitleSize(0.04);
+  g1->GetYaxis()->SetLabelSize(0.04);
+  g1->GetXaxis()->SetTitle("Parameter #mu");
+  //g1->GetXaxis()->SetTitleOffset(1.2);
+  g1->GetYaxis()->SetTitle("Parameter k");
+  g1->GetYaxis()->SetTitleOffset(1.5);
+  //g1->GetXaxis()->SetLimits(0.0,2*muFitted);
+  //g1->GetHistogram()->SetMinimum(0.0);
+  //g1->GetHistogram()->SetMaximum(2*kFitted);
   g1->Draw();
-  g1->Draw("same*");
-  g2->Draw("sameC*");
-  g3->Draw("sameC*");
+  g1->Draw("same L*");
+  g2->Draw("same L*");
+  g3->Draw("same L*");
+
+  TCanvas * c4 = new TCanvas("c4","c4",400,400,400,400);
+  c4->cd();
+  c4->SetLeftMargin(0.12);
+  c4->SetLogy();
+  TGraph *gworst = new TGraph(Nsteps,stepvals,chi2worstvals);
+  gworst->SetLineColor(kRed);
+  TGraph *gbest = new TGraph(Nsteps,stepvals,chi2bestvals);
+  gbest->SetLineColor(kBlue);
+  gworst->SetTitle("Best and worst #chi^{2}");
+  gworst->GetXaxis()->SetTitleSize(0.04);
+  gworst->GetXaxis()->SetLabelSize(0.04);
+  gworst->GetYaxis()->SetTitleSize(0.04);
+  gworst->GetYaxis()->SetLabelSize(0.04);
+  gworst->GetXaxis()->SetTitle("steps");
+  //gworst->GetXaxis()->SetTitleOffset(1.2);
+  gworst->GetYaxis()->SetTitle("#chi^{2}");
+  //gworst->GetYaxis()->SetTitleOffset(1.8);
+  gworst->SetMinimum(100.0);
+  gworst->SetMaximum(1e4);
+  gworst->Draw();
+  gworst->Draw("same L");
+  gbest->Draw("same L");
 
   cout << "Generating final histogram" << endl;
   //Show final histogram and create fine histogram to estimate statistics
@@ -339,8 +399,9 @@ void simplexFit() {
   cout << "time elapsed: " << cpu_time_used << " seconds." << endl;
   cout << "The program finished." << endl;
 
-  c1->SaveAs("2018simplexFit_GlauberHFPbPb_MinBiasDataSumETHF.pdf");
-  c2->SaveAs("2018simplexFitPath.pdf");
-  c3->SaveAs("2018simplexFitProcess.pdf");
+  c1->SaveAs("simplexFit_GlauberHFPbPb_MinBiasDataSumETHF.pdf");
+  c2->SaveAs("simplexFitPath.pdf");
+  c3->SaveAs("simplexFitProcess.pdf");
+  c4->SaveAs("simplexFitChi2.pdf");
 }
 
