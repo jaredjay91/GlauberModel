@@ -20,6 +20,10 @@ void simplexFit() {
   start = clock();
 
   gStyle->SetOptStat(0);
+  gStyle->SetPadTickX(1);
+  gStyle->SetPadTickY(1);
+
+  float textSize = 0.055;
 
 //---------------------------------------------------------------------------------------------------------------------------------------------
 //PART 1: GENERATE EVENTS WITH GLAUBER MODEL MONTE CARLO
@@ -43,7 +47,7 @@ void simplexFit() {
 //PART 2: APPLY PARTICLE PRODUCTION MODEL AND FIT MONTE CARLO TO CMS DATA
 
   //Create canvas
-  TCanvas * c1 = new TCanvas("c1","c1",500,0,500,400);
+  TCanvas * c1 = new TCanvas("c1","c1",500,0,500,500);
   c1->SetLogy();
   c1->SetBottomMargin(0.15);
   c1->SetLeftMargin(0.2);
@@ -142,8 +146,8 @@ void simplexFit() {
     normeps = 0.0;
   }
 
-  while (dev>0.00001) {
-  //while (dev>0.0001) {
+  //while (dev>0.00001) {
+  while (dev>0.0001) {
     int changeOne = bigOne;
     smallOne = 0;
     otherOne = 0;
@@ -294,27 +298,31 @@ void simplexFit() {
     cout << "stepvals[" << istep << "] = " << stepvals[istep] << endl;
   }
 
-  TCanvas * c2 = new TCanvas("c2","c2",0,0,400,400);
+  TCanvas * c2 = new TCanvas("c2","c2",0,0,500,500);
   c2->cd();
   TGraph *gmin = new TGraph(Nsteps,bvals,svals);
-  c2->SetLeftMargin(0.12);
+  //c2->SetLeftMargin(0.12);
+  c2->SetLeftMargin(0.15);
+  c2->SetBottomMargin(0.15);
   gmin->SetTitle("Path to minimum #chi^2");
-  gmin->GetXaxis()->SetTitleSize(0.04);
-  gmin->GetXaxis()->SetLabelSize(0.04);
-  gmin->GetYaxis()->SetTitleSize(0.04);
-  gmin->GetYaxis()->SetLabelSize(0.04);
-  gmin->GetXaxis()->SetTitle("Parameter #mu");
+  gmin->GetXaxis()->SetTitleSize(textSize);
+  gmin->GetXaxis()->SetLabelSize(textSize);
+  gmin->GetYaxis()->SetTitleSize(textSize);
+  gmin->GetYaxis()->SetLabelSize(textSize);
+  gmin->GetXaxis()->SetTitle("#mu");
   //gmin->GetXaxis()->SetTitleOffset(1.2);
-  gmin->GetYaxis()->SetTitle("Parameter k");
+  gmin->GetYaxis()->SetTitle("k");
   gmin->GetYaxis()->SetTitleOffset(1.5);
   //gmin->GetXaxis()->SetLimits(0.0,2*muFitted);
   //gmin->GetHistogram()->SetMinimum(0.0);
   //gmin->GetHistogram()->SetMaximum(2*kFitted);
   gmin->Draw("AC*");
 
-  TCanvas * c3 = new TCanvas("c3","c3",0,400,400,400);
+  TCanvas * c3 = new TCanvas("c3","c3",0,500,500,500);
   c3->cd();
-  c3->SetLeftMargin(0.12);
+  //c3->SetLeftMargin(0.12);
+  c3->SetLeftMargin(0.15);
+  c3->SetBottomMargin(0.15);
   TGraph *g1 = new TGraph(Nsteps,bvals1,svals1);
   g1->SetLineColor(kRed);
   TGraph *g2 = new TGraph(Nsteps,bvals2,svals2);
@@ -322,13 +330,13 @@ void simplexFit() {
   TGraph *g3 = new TGraph(Nsteps,bvals3,svals3);
   g3->SetLineColor(kGreen);
   g1->SetTitle("Convergence of the 3 points");
-  g1->GetXaxis()->SetTitleSize(0.04);
-  g1->GetXaxis()->SetLabelSize(0.04);
-  g1->GetYaxis()->SetTitleSize(0.04);
-  g1->GetYaxis()->SetLabelSize(0.04);
-  g1->GetXaxis()->SetTitle("Parameter #mu");
+  g1->GetXaxis()->SetTitleSize(textSize);
+  g1->GetXaxis()->SetLabelSize(textSize);
+  g1->GetYaxis()->SetTitleSize(textSize);
+  g1->GetYaxis()->SetLabelSize(textSize);
+  g1->GetXaxis()->SetTitle("#mu");
   //g1->GetXaxis()->SetTitleOffset(1.2);
-  g1->GetYaxis()->SetTitle("Parameter k");
+  g1->GetYaxis()->SetTitle("k");
   g1->GetYaxis()->SetTitleOffset(1.5);
   //g1->GetXaxis()->SetLimits(0.0,2*muFitted);
   //g1->GetHistogram()->SetMinimum(0.0);
@@ -338,19 +346,21 @@ void simplexFit() {
   g2->Draw("same L*");
   g3->Draw("same L*");
 
-  TCanvas * c4 = new TCanvas("c4","c4",400,400,400,400);
+  TCanvas * c4 = new TCanvas("c4","c4",500,500,500,500);
   c4->cd();
-  c4->SetLeftMargin(0.12);
+  //c4->SetLeftMargin(0.12);
+  c4->SetBottomMargin(0.15);
+  c4->SetLeftMargin(0.15);
   c4->SetLogy();
   TGraph *gworst = new TGraph(Nsteps,stepvals,chi2worstvals);
   gworst->SetLineColor(kRed);
   TGraph *gbest = new TGraph(Nsteps,stepvals,chi2bestvals);
   gbest->SetLineColor(kBlue);
   gworst->SetTitle("Best and worst #chi^{2}");
-  gworst->GetXaxis()->SetTitleSize(0.04);
-  gworst->GetXaxis()->SetLabelSize(0.04);
-  gworst->GetYaxis()->SetTitleSize(0.04);
-  gworst->GetYaxis()->SetLabelSize(0.04);
+  gworst->GetXaxis()->SetTitleSize(textSize);
+  gworst->GetXaxis()->SetLabelSize(textSize);
+  gworst->GetYaxis()->SetTitleSize(textSize);
+  gworst->GetYaxis()->SetLabelSize(textSize);
   gworst->GetXaxis()->SetTitle("steps");
   //gworst->GetXaxis()->SetTitleOffset(1.2);
   gworst->GetYaxis()->SetTitle("#chi^{2}");
@@ -360,6 +370,12 @@ void simplexFit() {
   gworst->Draw();
   gworst->Draw("same L");
   gbest->Draw("same L");
+  TLegend* l4 = new TLegend(0.5,0.5,0.8,0.8);
+  l4->SetBorderSize(0);
+  l4->SetTextSize(textSize);
+  l4->AddEntry(gbest,"best #chi^{2}","l");
+  l4->AddEntry(gworst,"worst #chi^{2}","l");
+  //lc->Draw("same");
 
   cout << "Generating final histogram" << endl;
   //Show final histogram and create fine histogram to estimate statistics
@@ -401,7 +417,10 @@ void simplexFit() {
 
   c1->SaveAs("simplexFit_GlauberHFPbPb_MinBiasDataSumETHF.pdf");
   c2->SaveAs("simplexFitPath.pdf");
+  c2->SaveAs("simplexFitPath.C");
   c3->SaveAs("simplexFitProcess.pdf");
+  c3->SaveAs("simplexFitProcess.C");
   c4->SaveAs("simplexFitChi2.pdf");
+  c4->SaveAs("simplexFitChi2.C");
 }
 

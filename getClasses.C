@@ -231,19 +231,19 @@ void getClasses() {
   cout << "Finished drawing" << endl;
 
   //Save the Histogram
-  c1->SaveAs("GlauberClasses_PbPbMinBiasDataSumETHF.pdf");
-  c1->SaveAs("GlauberClasses_PbPbMinBiasDataSumETHF.png");
+  c1->SaveAs(Form("GlauberClasses_PbPbMinBiasDataSumETHF_%iperc.pdf",percentsize));
+  c1->SaveAs(Form("GlauberClasses_PbPbMinBiasDataSumETHF_%iperc.png",percentsize));
   cout << "Saved histograms" << endl;
 
   //Determine average values of Npart, Ncol, and b for each centrality class
-  TH1D* hNpartTot = new TH1D("hNpartTot","Number of participants",100,0,500);
+  TH1D* hNpartTot = new TH1D("hNpartTot","Number of participants",90,0,450);
   TH1D* hNcolTot = new TH1D("hNcolTot","Number of Collisions",100,0,2500);
   TH1D* hbTot = new TH1D("hbTot","Impact Parameter",100,0,20);
   TH1D* hNpart[numClasses];
   TH1D* hNcol[numClasses];
   TH1D* hb[numClasses];
   for (int iClass = 0; iClass<numClasses; iClass++) {
-    hNpart[iClass] = new TH1D(Form("hNpart[%i]",iClass),"hNpart",100,0,500);
+    hNpart[iClass] = new TH1D(Form("hNpart[%i]",iClass),"hNpart",90,0,450);
     hNcol[iClass] = new TH1D(Form("hNcol[%i]",iClass),"hNcol",100,0,2500);
     hb[iClass] = new TH1D(Form("hb[%i]",iClass),"hb",100,0,20);
   }
@@ -300,32 +300,52 @@ void getClasses() {
   }
 
   //LaTeX format
-  cout << endl << "Centrality & $\\langle N_{part}\\rangle$ & $\\langle N_{col}\\rangle$ & b \\\\" << endl;
+  cout << endl << "Centrality & $\\langle N_{part}\\rangle$ & $\\langle N_{coll}\\rangle$ & b \\\\" << endl;
   for (int iClass = 0; iClass<numClasses; iClass++) {
     cout << Form("%d - %d",iClass*percentsize,(iClass+1)*percentsize) << "\\% & " << Npartavg[iClass] << " & " << Ncolavg[iClass] << " & " << bavg[iClass] << " \\\\" << endl;
   }
   //Compare to https://twiki.cern.ch/twiki/bin/viewauth/CMS/Glauber5TeVPbPbNewParameters#Npart
 
   //make a fancy looking plot.
+  float textSize = 0.05;
   TCanvas* c2 =  new TCanvas("c2","c2",0,0,1200,400);
   c2->Divide(3,1);
   c2->cd(1);
   gPad->SetLogy();
+  gPad->SetBottomMargin(0.11);
   hNpartTot->GetXaxis()->SetTitle("N_{part}");
-  hNpartTot->GetXaxis()->SetTitleSize(0.04);
+  hNpartTot->GetXaxis()->SetLabelSize(textSize);
+  hNpartTot->GetXaxis()->SetTitleSize(textSize);
+  hNpartTot->GetYaxis()->SetLabelSize(textSize);
+  hNpartTot->GetYaxis()->SetTitleSize(textSize);
+  hNpartTot->SetMaximum(0.2*NEvents);
+  hNpartTot->SetMinimum(0.6);
   hNpartTot->Draw();
   c2->cd(2);
   gPad->SetLogy();
-  hNcolTot->GetXaxis()->SetTitle("N_{col}");
-  hNcolTot->GetXaxis()->SetTitleSize(0.04);
+  gPad->SetBottomMargin(0.11);
+  hNcolTot->GetXaxis()->SetTitle("N_{coll}");
+  hNcolTot->GetXaxis()->SetLabelSize(textSize);
+  hNcolTot->GetXaxis()->SetTitleSize(textSize);
+  hNcolTot->GetYaxis()->SetLabelSize(textSize);
+  hNcolTot->GetYaxis()->SetTitleSize(textSize);
+  hNcolTot->SetMaximum(0.4*NEvents);
+  hNcolTot->SetMinimum(0.6);
   hNcolTot->Draw();
   c2->cd(3);
+  TGaxis::SetMaxDigits(3);
+  gPad->SetBottomMargin(0.11);
   hbTot->GetXaxis()->SetTitle("b");
-  hbTot->GetXaxis()->SetTitleSize(0.04);
+  hbTot->GetXaxis()->SetLabelSize(textSize);
+  hbTot->GetXaxis()->SetTitleSize(textSize);
+  hbTot->GetYaxis()->SetLabelSize(textSize);
+  hbTot->GetYaxis()->SetTitleSize(textSize);
   hbTot->Draw();
-  TLegend* leg = new TLegend(0.53, 0.65, 0.7, 0.89);
+  TLegend* leg = new TLegend(0.5, 0.65, 0.67, 0.89);
+  leg->SetTextSize(0.04);
   leg->SetBorderSize(0);
   TLegend* leg2 = new TLegend(0.7, 0.65, 0.89, 0.89);
+  leg2->SetTextSize(0.04);
   leg2->SetBorderSize(0);
   for (int iClass = 0; iClass<numClasses; iClass++) {
     int iColor = iClass+2;
@@ -343,11 +363,12 @@ void getClasses() {
     hb[iClass]->Draw("same");
   }
 
+
   c2->cd(2);
   leg->Draw("same");
   leg2->Draw("same");
-  c2->SaveAs("NpartNcolb_centralityClasses.png");
-  c2->SaveAs("NpartNcolb_centralityClasses.pdf");
+  c2->SaveAs(Form("NpartNcolb_centralityClasses_%iperc.png",percentsize));
+  c2->SaveAs(Form("NpartNcolb_centralityClasses_%iperc.pdf",percentsize));
 
   //Display time elapsed
   end = clock();
